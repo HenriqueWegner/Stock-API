@@ -1,6 +1,7 @@
 import flask
 from flask import request, jsonify
 import sqlite3
+import json
 
 app = flask.Flask(__name__)
 app.config["DEBUG"] = True
@@ -34,7 +35,7 @@ def page_not_found(e):
     return "<h1>404</h1><p>The resource could not be found.</p>", 404
 
 
-@app.route('/API/resources/items', methods=['GET'])
+@app.route('/API/resources/items/post', methods=['GET'])
 def api_filter():
     query_parameters = request.args
 
@@ -68,12 +69,52 @@ def api_filter():
 
     query = query[:-4] + ';'
 
-    conn = sqlite3.connect('items.db')
+    conn = sqlite3.connect('resources/items.db')
     conn.row_factory = dict_factory
     cur = conn.cursor()
 
     results = cur.execute(query, to_filter).fetchall()
 
     return jsonify(results)
+
+
+@app.route('/API/resources/items/post', methods=['POST'])
+def api_post():
+
+    data = request.get_json()
+    #data = json.loads(myJSON)
+    print(data)
+    
+    mydata = (data['name'],data['quantity'],data['threshold'],data['type']);
+    
+    query = '''INSERT INTO items(name,qty,threshold,type) VALUES(?,?,?,?)'''
+
+    conn = sqlite3.connect('resources/items.db')
+    cur = conn.cursor()
+
+    cur.execute(query,mydata)
+
+    conn.commit()
+
+    return ''
+
+@app.route('/API/resources/items/delete', methods=['DELETE'])
+def api_delete():
+
+    data = request.get_json()
+
+    mydata = data['ID']
+
+    query = "DELETE FROM items WHERE ID ="
+
+    conn = sqlite3.connect('resources/items.db')
+    cur = conn.cursor()
+
+    cur.execute(query + str(mydata))
+
+    conn.commit()
+
+    return 'Deleted'
+
 
 app.run()
